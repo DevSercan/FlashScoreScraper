@@ -5,6 +5,7 @@ from selenium.webdriver.chrome.options import Options # Tarayıcı için ek seç
 from selenium.webdriver.support.ui import WebDriverWait # Selenium ile koşullu bekleme işlemleri için WebDriverWait kullanılır.
 from selenium.webdriver.support import expected_conditions as EC # Belirli bir koşulun gerçekleşmesini beklemek için expected_conditions sınıfı kullanılır.
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities # Tarayıcı isteği yaparken bazı Selenium izlerini gizlemek için DesiredCapabilities sınıfı kullanılır.
+import time
 
 class FlashScoreScraper:
     """ FlashScore internet adresindeki maç verilerini kazımaya yarayan bir sınıf. """
@@ -35,21 +36,31 @@ class FlashScoreScraper:
         options.add_argument("--disable-gpu") # GPU hızlandırmasını devre dışı bırak. Headless modda bazen gerekli olabilir.
         options.add_argument("--no-sandbox") # Sandbox modunu devre dışı bırak. Bazı sistemlerde başlatma sorunlarını önleyebilir.
 
-        options.add_argument('--ignore-certificate-errors')  # Sertifika hatalarını yok say.
-        options.add_argument('--allow-insecure-localhost')  # Yerel sunucu hatalarını yok say.
+        options.add_argument('--ignore-certificate-errors') # SSL sertifika hatalarını göz ardı eder
+        options.add_argument('--allow-insecure-localhost') # Yerel sunucu hatalarını yok say.
+        
+        options.add_argument("--disable-web-security")  # Web güvenlik önlemlerini devre dışı bırakır.
+        options.add_argument("--allow-running-insecure-content")  # Güvensiz içeriği çalıştırmaya izin verir.
+        options.add_argument("--disable-features=site-per-process")  # Site başına işlem özelliğini devre dışı bırakır.
+
 
         caps = DesiredCapabilities().CHROME
         caps["pageLoadStrategy"] = "eager" # Hız için "eager" sayfa yükleme stratejisi kullan.
 
         options.add_experimental_option("excludeSwitches", ["enable-automation"]) # Otomasyonla ilgili bazı switch'leri devre dışı bırak.
         options.add_experimental_option("useAutomationExtension", False) # Otomasyon uzantısını devre dışı bırak.
-        options.add_argument("--disable-blink-features=AutomationControlled") # Tarayıcıyı otomasyon ile kontrol ediliyormuş gibi göster.
+        options.add_argument("--disable-blink-features=AutomationControlled") # Selenium izlerini gizlemeye yardımcı olur.
 
         options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36") # Tarayıcıya özel bir kullanıcı ajanı ayarla.
     
     def waitJs(self):
         """ Maç sonuçlarının JavaScript ile yüklenmesini bekler. """
         self.wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'event__match'))) # JavaScript ile yüklenen içeriklerin tamamlanmasını bekler.
+
+    def scrollTarget(self, targetElement):
+        """ Sayfayı hedef öğenin konumuna kaydırır. """
+        self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", targetElement)
+        time.sleep(1)
 
     def open(self):
         """ Tarayıcıyı başlatır. """
@@ -71,18 +82,21 @@ class FlashScoreScraper:
         filterTabs = self.driver.find_elements(By.CLASS_NAME, 'filters__tab') # Filtre sekmesini alır.
         for tab in filterTabs: # Filtre sekmesindeki her bir filtreyi sırayla ele alıyoruz.
             if tab.text == targetTab: # Eğer mevcut filtre sekmesinin yazısı, hedef sekme yazısına eşit ise koşul sağlanır.
+                self.scrollTarget(tab) # Butonu ortalayacak şekilde sayfayı kaydırır.
                 tab.click() # Mevcut filtre sekmesine tıklar.
         self.waitJs() # JavaScript yüklenmesini bekler.
     
     def loadYesterday(self):
         """ Bir önceki günün verilerini yükler. """
         yesterdayButton = self.driver.find_element(By.CLASS_NAME, 'calendar__navigation--yesterday') # Takvim sekmesindeki, bir önceki gün butonunu seçer.
+        self.scrollTarget(yesterdayButton) # Butonu ortalayacak şekilde sayfayı kaydırır.
         yesterdayButton.click() # Butona tıklar.
         self.waitJs() # JavaScript yüklenmesini bekler.
     
     def loadTomorrow(self):
         """ Bir sonraki günün verilerini yükler. """
         tomorrowButton = self.driver.find_element(By.CLASS_NAME, 'calendar__navigation--tomorrow') # Takvim sekmesindeki, bir sonraki gün butonunu seçer.
+        self.scrollTarget(tomorrowButton) # Butonu ortalayacak şekilde sayfayı kaydırır.
         tomorrowButton.click() # Butona tıklar.
         self.waitJs() # JavaScript yüklenmesini bekler.
     
