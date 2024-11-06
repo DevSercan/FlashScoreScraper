@@ -19,7 +19,7 @@ class FlashScoreScraper:
     def _initializeDriver(self):
         """ Tarayıcının başlangıç ayarlarını yapar ve tarayıcıyı tanımlar. """
         driverPath = f"webdrivers/{self.platform}/{self.driverName}/{self.driverName}driver.exe" # Sürücünün dosya konumunu tanımlıyoruz.
-        options = self._initializeOptions() # Sürücüyü oluşturmadan önce başlangıç ayarlarını belirliyoruz.
+        options = self._getOptions() # Sürücüyü oluşturmadan önce başlangıç ayarlarını belirliyoruz.
         service = Service(driverPath) # Dosya konumundan alınan sürücüyü kullanarak bir hizmet tanımlıyoruz. Bu hizmet ile tarayıcı nesnesi oluşturacağız.
         driver = None # Tarayıcı nesnesini tutması için bir değişken oluşturuyoruz.
         if self.driverName == "chrome": # Eğer tarayıcı ismi "Chrome" ise koşul sağlanır.
@@ -27,7 +27,7 @@ class FlashScoreScraper:
         driver.maximize_window() # Tarayıcıyı tam ekran yapar.
         return driver
         
-    def _initializeOptions(self):
+    def _getOptions(self):
         """ Tarayıcı ayarlarını belirler. """
         options = Options() # Tarayıcı seçenekleri için gerekli nesneyi oluşturur.
 
@@ -52,7 +52,9 @@ class FlashScoreScraper:
         options.add_argument("--disable-blink-features=AutomationControlled") # Selenium izlerini gizlemeye yardımcı olur.
 
         options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36") # Tarayıcıya özel bir kullanıcı ajanı ayarla.
-    
+        
+        return options
+
     def waitJs(self):
         """ Maç sonuçlarının JavaScript ile yüklenmesini bekler. """
         self.wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'event__match'))) # JavaScript ile yüklenen içeriklerin tamamlanmasını bekler.
@@ -109,11 +111,13 @@ class FlashScoreScraper:
             awayTeam = match.find_element(By.CLASS_NAME, "event__awayParticipant").text # Karşı takımın adını alır.
             homeScore = match.find_element(By.CLASS_NAME, "event__score--home").text # Ana takımın maç skorunu alır.
             awayScore = match.find_element(By.CLASS_NAME, "event__score--away").text # Karşı takımın maç skorunu alır.
+            eventLink = match.find_element(By.CLASS_NAME, "eventRowLink").text # Etkinliğin linkini alır.
             finishedData.append({ # Verileri diziye sözlük formatında ekler.
                 "Home Team": homeTeam,
                 "Away Team": awayTeam,
                 "Home Score": homeScore,
-                "Away Score": awayScore
+                "Away Score": awayScore,
+                "Event Link": eventLink
             })
         return finishedData
 
