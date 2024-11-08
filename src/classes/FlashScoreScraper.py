@@ -60,7 +60,7 @@ class FlashScoreScraper:
             options.add_argument("--disable-web-security")  # Web güvenlik önlemlerini devre dışı bırakır.
             options.add_argument("--allow-running-insecure-content")  # Güvensiz içeriği çalıştırmaya izin verir.
             options.add_argument("--disable-features=site-per-process")  # Site başına işlem özelliğini devre dışı bırakır.
-
+            options.add_argument("start-maximized")  # Tarayıcıyı tam ekran başlatır.
 
             caps = DesiredCapabilities().CHROME
             caps["pageLoadStrategy"] = "eager" # Hız için "eager" sayfa yükleme stratejisi kullan.
@@ -135,11 +135,13 @@ class FlashScoreScraper:
         """ Maç sonuçlarının filtre sekmesinde bulunan, 'ODDS' veya 'FINISHED' gibi istenilen filtre seçeneğini seçer. """
         try:
             log.debug(f"[targetTab={targetTab}] The 'clickFilterTab' function of the 'FlashScoreScraper' class has been executed.")
+            WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.CLASS_NAME, 'filters__tab'))) # 'filters__tab' sınıfının yüklenmesini bekler.
             filterTabs = self.driver.find_elements(By.CLASS_NAME, 'filters__tab') # Filtre sekmesini alır.
             for tab in filterTabs: # Filtre sekmesindeki her bir filtreyi sırayla ele alıyoruz.
                 if tab.text == targetTab: # Eğer mevcut filtre sekmesinin yazısı, hedef sekme yazısına eşit ise koşul sağlanır.
                     self.scrollTarget(tab) # Butonu ortalayacak şekilde sayfayı kaydırır.
                     tab.click() # Mevcut filtre sekmesine tıklar.
+                    break
             self.waitJs('event__match') # JavaScript yüklenmesini bekler.
             return True
         except Exception as e:
@@ -150,11 +152,13 @@ class FlashScoreScraper:
         """ Etkinliklerde filtre sekmesinde bulunan, 'ODDS' veya 'H2H' gibi istenilen filtre seçeneğini seçer. """
         try:
             log.debug(f"[targetTab={targetTab}] The 'clickEventFilterTab' function of the 'FlashScoreScraper' class has been executed.")
+            WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, '//button[@data-testid="wcl-tab"]'))) # 'wcl-tab ' ögesinin yüklenmesini bekler.
             filterTabs = self.driver.find_elements(By.XPATH, '//button[@data-testid="wcl-tab"]') # Filtre sekmesini alır.
             for tab in filterTabs: # Filtre sekmesindeki her bir filtreyi sırayla ele alıyoruz.
                 if tab.text == targetTab: # Eğer mevcut filtre sekmesinin yazısı, hedef sekme yazısına eşit ise koşul sağlanır.
                     self.scrollTarget(tab) # Butonu ortalayacak şekilde sayfayı kaydırır.
                     tab.click() # Mevcut filtre sekmesine tıklar.
+                    break
             return True
         except Exception as e:
             log.error(f"[targetTab={targetTab}] Unexpected error in 'clickEventFilterTab' function of the 'FlashScoreScraper' class:\n{e}")
