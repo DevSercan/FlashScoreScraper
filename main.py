@@ -1,10 +1,5 @@
-from classes.FlashScoreScraper import FlashScoreScraper # FlashScore internet adresindeki maç verilerini çeken sınıfı içe aktarıyoruz.
-import pandas # Python'da veri işleme ve Excel dosyaları oluşturma gibi işlemler için pandas kütüphanesi kullanılır.
-
-def saveToExcel(data, filename):
-    """ Bir veri listesini Excel olarak dışa aktarır. """
-    dataFrame = pandas.DataFrame(data)
-    dataFrame.to_excel(f"{filename}.xlsx", index=False, engine='openpyxl')
+from src.classes import Log, FlashScoreScraper
+from src.utils.helper import saveToExcel
 
 def main():
     """ Bütün işlemleri yöneten ana fonksiyondur. """
