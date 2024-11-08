@@ -6,6 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait # Selenium ile koşullu 
 from selenium.webdriver.support import expected_conditions as EC # Belirli bir koşulun gerçekleşmesini beklemek için expected_conditions sınıfı kullanılır.
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities # Tarayıcı isteği yaparken bazı Selenium izlerini gizlemek için DesiredCapabilities sınıfı kullanılır.
 import time
+from fractions import Fraction
 
 from src.classes import Log
 log = Log()
@@ -253,7 +254,7 @@ class FlashScoreScraper:
                 odds = match.find_elements(By.CLASS_NAME, "odds__odd") # Maç sonucunun oran verilerini alır.
                 oddList = [] # Oranları tutar.
                 for odd in odds: # Oranları sırayla döngüde ele alıyoruz.
-                    oddList.append(odd.text) # Oran verisini diziye ekler.
+                    oddList.append(str(float(Fraction(odd.text)))) # Oran verisini diziye ekler.
                 oddsData.append({ # Verileri diziye sözlük formatında ekler.
                     "Home Team": homeTeam,
                     "Away Team": awayTeam,
@@ -280,7 +281,7 @@ class FlashScoreScraper:
                 odds = odd.find_elements(By.CLASS_NAME, "oddsCell__odd") # Maç sonucunun oran verilerini alır.
                 oddList = [] # Oranları tutar.
                 for odd in odds: # Oranları sırayla döngüde ele alıyoruz.
-                    oddList.append(odd.text) # Oran verisini diziye ekler.
+                    oddList.append(str(float(Fraction(odd.text)))) # Oran verisini diziye ekler.
                 oddsData.append({ # Verileri diziye sözlük formatında ekler.
                     "Bookmaker": bookmaker,
                     "Odds": ', '.join(oddList)

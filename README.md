@@ -4,6 +4,5 @@
 
 # FlashScore Scraper
 
-Bu proje, FlashScore internet adresindeki maç verilerini çekmek için geliştirilmiştir. Veriler, Excel dosyasına kaydedilmektedir.
-
+Bu proje, FlashScore internet adresindeki maç verileri görüntüleyen bir arayüze sahiptir.
 ---
