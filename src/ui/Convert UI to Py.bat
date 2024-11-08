@@ -1,0 +1,1 @@
+start converter/pyside6-uic.exe MainWindow.ui -o MainWindow.py

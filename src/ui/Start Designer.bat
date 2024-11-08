@@ -1,0 +1,1 @@
+start designer/pyside6-designer.exe MainWindow.ui
