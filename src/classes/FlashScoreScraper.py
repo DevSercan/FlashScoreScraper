@@ -76,14 +76,14 @@ class FlashScoreScraper:
             log.error(f"Unexpected error in '_getOptions' function of the 'FlashScoreScraper' class:\n{e}")
             return None
 
-    def waitJs(self) -> bool:
+    def waitJs(self, className:str) -> bool:
         """ Maç sonuçlarının JavaScript ile yüklenmesini bekler. """
         try:
-            log.debug("The 'waitJs' function of the 'FlashScoreScraper' class has been executed.")
-            self.wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'event__match'))) # JavaScript ile yüklenen içeriklerin tamamlanmasını bekler.
+            log.debug(f"[className={className}] The 'waitJs' function of the 'FlashScoreScraper' class has been executed.")
+            self.wait.until(EC.presence_of_element_located((By.CLASS_NAME, className))) # JavaScript ile yüklenen içeriklerin tamamlanmasını bekler.
             return True
         except Exception as e:
-            log.error(f"Unexpected error in 'waitJs' function of the 'FlashScoreScraper' class:\n{e}")
+            log.error(f"[className={className}] Unexpected error in 'waitJs' function of the 'FlashScoreScraper' class:\n{e}")
             return False
 
     def scrollTarget(self, targetElement) -> bool:
@@ -104,7 +104,7 @@ class FlashScoreScraper:
             self.driver = self._initializeDriver() # Bir tarayıcı nesnesi oluşturur.
             self.wait = WebDriverWait(self.driver, 10) # JavaScript yüklenmesini beklemek için bir bekleyici oluşturur. Bekleme süresi saniye cinsindendir.
             self.driver.get(self.url) # Sürücüyü başlatır.
-            self.waitJs() # JavaScript yüklenmesini bekler.
+            self.waitJs('event__match') # JavaScript yüklenmesini bekler.
             return True
         except Exception as e:
             log.error(f"Unexpected error in 'open' function of the 'FlashScoreScraper' class:\n{e}")
@@ -140,10 +140,24 @@ class FlashScoreScraper:
                 if tab.text == targetTab: # Eğer mevcut filtre sekmesinin yazısı, hedef sekme yazısına eşit ise koşul sağlanır.
                     self.scrollTarget(tab) # Butonu ortalayacak şekilde sayfayı kaydırır.
                     tab.click() # Mevcut filtre sekmesine tıklar.
-            self.waitJs() # JavaScript yüklenmesini bekler.
+            self.waitJs('event__match') # JavaScript yüklenmesini bekler.
             return True
         except Exception as e:
-            log.error(f"Unexpected error in 'clickFilterTab' function of the 'FlashScoreScraper' class:\n{e}")
+            log.error(f"[targetTab={targetTab}] Unexpected error in 'clickFilterTab' function of the 'FlashScoreScraper' class:\n{e}")
+            return False
+    
+    def clickEventFilterTab(self, targetTab:str) -> bool:
+        """ Etkinliklerde filtre sekmesinde bulunan, 'ODDS' veya 'H2H' gibi istenilen filtre seçeneğini seçer. """
+        try:
+            log.debug(f"[targetTab={targetTab}] The 'clickEventFilterTab' function of the 'FlashScoreScraper' class has been executed.")
+            filterTabs = self.driver.find_elements(By.XPATH, '//button[@data-testid="wcl-tab"]') # Filtre sekmesini alır.
+            for tab in filterTabs: # Filtre sekmesindeki her bir filtreyi sırayla ele alıyoruz.
+                if tab.text == targetTab: # Eğer mevcut filtre sekmesinin yazısı, hedef sekme yazısına eşit ise koşul sağlanır.
+                    self.scrollTarget(tab) # Butonu ortalayacak şekilde sayfayı kaydırır.
+                    tab.click() # Mevcut filtre sekmesine tıklar.
+            return True
+        except Exception as e:
+            log.error(f"[targetTab={targetTab}] Unexpected error in 'clickEventFilterTab' function of the 'FlashScoreScraper' class:\n{e}")
             return False
     
     def loadYesterday(self) -> bool:
@@ -153,7 +167,7 @@ class FlashScoreScraper:
             yesterdayButton = self.driver.find_element(By.CLASS_NAME, 'calendar__navigation--yesterday') # Takvim sekmesindeki, bir önceki gün butonunu seçer.
             self.scrollTarget(yesterdayButton) # Butonu ortalayacak şekilde sayfayı kaydırır.
             yesterdayButton.click() # Butona tıklar.
-            self.waitJs() # JavaScript yüklenmesini bekler.
+            self.waitJs('event__match') # JavaScript yüklenmesini bekler.
             return True
         except Exception as e:
             log.error(f"Unexpected error in 'loadYesterday' function of the 'FlashScoreScraper' class:\n{e}")
@@ -166,7 +180,7 @@ class FlashScoreScraper:
             tomorrowButton = self.driver.find_element(By.CLASS_NAME, 'calendar__navigation--tomorrow') # Takvim sekmesindeki, bir sonraki gün butonunu seçer.
             self.scrollTarget(tomorrowButton) # Butonu ortalayacak şekilde sayfayı kaydırır.
             tomorrowButton.click() # Butona tıklar.
-            self.waitJs() # JavaScript yüklenmesini bekler.
+            self.waitJs('event__match') # JavaScript yüklenmesini bekler.
             return True
         except Exception as e:
             log.error(f"Unexpected error in 'loadTomorrow' function of the 'FlashScoreScraper' class:\n{e}")
@@ -244,4 +258,64 @@ class FlashScoreScraper:
             return oddsData
         except Exception as e:
             log.error(f"Unexpected error in 'getOddsData' function of the 'FlashScoreScraper' class:\n{e}")
+            return []
+    
+    def getOddsDataFromEvent(self, eventLink:str) -> list:
+        """ Bir etkinlikteki oran verilerini alır. """
+        try:
+            log.debug("The 'getOddsDataFromEvent' function of the 'FlashScoreScraper' class has been executed.")
+            self.driver.get(eventLink) # Sürücüyü başlatır.
+            self.waitJs('detailOver') # JavaScript yüklenmesini bekler.
+            self.clickEventFilterTab(targetTab="ODDS") # Maç filtrelerinden "ODDS" sekmesini seçer.
+            self.waitJs('ui-table') # JavaScript yüklenmesini bekler.
+            bodyUiTable = self.driver.find_element(By.CLASS_NAME, 'ui-table__body') # Verilerin yer aldığı tabloyu seçer.
+            odds = bodyUiTable.find_elements(By.CLASS_NAME, 'ui-table__row') # Seçilen tablodan ODDS verilerini alır.
+            oddsData = [] # Oran verilerini tutar.
+            for odd in odds: # Maçları sırayla döngüde ele alıyoruz.
+                bookmaker = odd.find_element(By.CLASS_NAME, "prematchLink").get_attribute("title") # Ana takımın adını alır.
+                odds = odd.find_elements(By.CLASS_NAME, "oddsCell__odd") # Maç sonucunun oran verilerini alır.
+                oddList = [] # Oranları tutar.
+                for odd in odds: # Oranları sırayla döngüde ele alıyoruz.
+                    oddList.append(odd.text) # Oran verisini diziye ekler.
+                oddsData.append({ # Verileri diziye sözlük formatında ekler.
+                    "Bookmaker": bookmaker,
+                    "Odds": ', '.join(oddList)
+                })
+            return oddsData
+            
+        except Exception as e:
+            log.error(f"Unexpected error in 'getOddsDataFromEvent' function of the 'FlashScoreScraper' class:\n{e}")
+            return []
+
+    def getH2HDataFromEvent(self, eventLink:str) -> list:
+        """ Bir etkinlikteki H2H verilerini alır. """
+        try:
+            log.debug("The 'getH2HDataFromEvent' function of the 'FlashScoreScraper' class has been executed.")
+            self.driver.get(eventLink) # Sürücüyü başlatır.
+            self.waitJs('detailOver') # JavaScript yüklenmesini bekler.
+            self.clickEventFilterTab(targetTab="H2H") # Maç filtrelerinden "H2H" sekmesini seçer.
+            self.waitJs('h2h') # JavaScript yüklenmesini bekler.
+            h2hTable = self.driver.find_element(By.CLASS_NAME, 'h2h') # H2H Verilerinin yer aldığı tabloyu seçer.
+            h2hList = h2hTable.find_elements(By.CLASS_NAME, 'h2h__row') # Seçilen tablodan H2H verilerini alır.
+            h2hData = [] # Oran verilerini tutar.
+            for h2h in h2hList: # Maçları sırayla döngüde ele alıyoruz.
+                date = h2h.find_element(By.CLASS_NAME, "h2h__date").text
+                event = h2h.find_element(By.CLASS_NAME, "h2h__event").text
+                homeTeam = h2h.find_element(By.CLASS_NAME, "h2h__homeParticipant").text
+                awayTeam = h2h.find_element(By.CLASS_NAME, "h2h__awayParticipant").text
+                result = h2h.find_element(By.CLASS_NAME, "h2h__result")
+                scoreList = result.find_elements(By.TAG_NAME, "span")
+                homeScore = scoreList[0].text
+                awayScore = scoreList[1].text
+                h2hData.append({ # Verileri diziye sözlük formatında ekler.
+                    "Date": date,
+                    "Event": event,
+                    "Home Team": homeTeam,
+                    "Away Team": awayTeam,
+                    "Home Score": homeScore,
+                    "Away Score": awayScore
+                })
+            return h2hData
+        except Exception as e:
+            log.error(f"Unexpected error in 'getH2HDataFromEvent' function of the 'FlashScoreScraper' class:\n{e}")
             return []

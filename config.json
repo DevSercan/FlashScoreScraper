@@ -2,7 +2,11 @@
     "logging": {
         "minimumLevel": 5,
         "path": "logs/",
-        "fileSizeLimitMegabytes": 6,
+        "fileSizeLimitMegabytes": 5,
         "printLogsToConsole": 1
-    }
+    },
+
+    "platform": "windows",
+    "driverName": "chrome",
+    "isHeadless": 1
 }
