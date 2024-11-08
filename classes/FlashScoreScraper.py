@@ -9,12 +9,11 @@ import time
 
 class FlashScoreScraper:
     """ FlashScore internet adresindeki maç verilerini kazımaya yarayan bir sınıf. """
-    def __init__(self, platform:str, driverName:str):
+    def __init__(self, platform:str, driverName:str, isHeadless:bool):
         self.platform = platform.lower() # Kullanılacak sürücü için platform bilgisi. Örneğin; Windows, Linux.
         self.driverName = driverName.lower() # Kullanılacak sürücü için tarayıcı bilgisi. Örneğin; Chrome, Firefox.
+        self.isHeadless = isHeadless # Tarayıcının görünmez olarak çalışıp çalışmayacağı bilgisini tutar.
         self.url = "https://www.flashscore.co.uk/" # FlashScore internet adresi.
-        self.driver = self._initializeDriver() # Bir tarayıcı nesnesi oluşturur.
-        self.wait = WebDriverWait(self.driver, 10) # JavaScript yüklenmesini beklemek için bir bekleyici oluşturur. Bekleme süresi saniye cinsindendir.
 
     def _initializeDriver(self):
         """ Tarayıcının başlangıç ayarlarını yapar ve tarayıcıyı tanımlar. """
@@ -31,6 +30,9 @@ class FlashScoreScraper:
         """ Tarayıcı ayarlarını belirler. """
         options = Options() # Tarayıcı seçenekleri için gerekli nesneyi oluşturur.
 
+        if self.isHeadless:
+            options.add_argument("--headless") # Tarayıcı, arka planda görünmez olarak çalışır.
+
         options.add_argument("--log-level=3") # Log seviyesini belirler. Log seviyesi 3 ise; Yalnızca uyarı ve hata mesajları gösterilir ve gereksiz bilgilendirici çıktılar görünmez.
 
         options.add_argument("--disable-gpu") # GPU hızlandırmasını devre dışı bırak. Headless modda bazen gerekli olabilir.
@@ -38,6 +40,8 @@ class FlashScoreScraper:
 
         options.add_argument('--ignore-certificate-errors') # SSL sertifika hatalarını göz ardı eder
         options.add_argument('--allow-insecure-localhost') # Yerel sunucu hatalarını yok say.
+
+        options.add_argument("--enable-unsafe-swiftshader") # WebGL uyarılarını almamak için gereklidir.
         
         options.add_argument("--disable-web-security")  # Web güvenlik önlemlerini devre dışı bırakır.
         options.add_argument("--allow-running-insecure-content")  # Güvensiz içeriği çalıştırmaya izin verir.
@@ -66,6 +70,8 @@ class FlashScoreScraper:
 
     def open(self):
         """ Tarayıcıyı başlatır. """
+        self.driver = self._initializeDriver() # Bir tarayıcı nesnesi oluşturur.
+        self.wait = WebDriverWait(self.driver, 10) # JavaScript yüklenmesini beklemek için bir bekleyici oluşturur. Bekleme süresi saniye cinsindendir.
         self.driver.get(self.url) # Sürücüyü başlatır.
         self.waitJs() # JavaScript yüklenmesini bekler.
     
@@ -102,8 +108,29 @@ class FlashScoreScraper:
         tomorrowButton.click() # Butona tıklar.
         self.waitJs() # JavaScript yüklenmesini bekler.
     
+    def getLiveData(self) -> list:
+        """ Canlı maç verilerini dizi olarak döndürür. """
+        self.clickFilterTab("LIVE") # Maç filtrelerinden "FINISHED" sekmesini seçer.
+        matches = self.getMatches() # Maç sonuçlarını alır.
+        liveData = []
+        for match in matches: # Maçları sırayla döngüde ele alıyoruz.
+            homeTeam = match.find_element(By.CLASS_NAME, "event__homeParticipant").text # Ana takımın adını alır.
+            awayTeam = match.find_element(By.CLASS_NAME, "event__awayParticipant").text # Karşı takımın adını alır.
+            homeScore = match.find_element(By.CLASS_NAME, "event__score--home").text # Ana takımın maç skorunu alır.
+            awayScore = match.find_element(By.CLASS_NAME, "event__score--away").text # Karşı takımın maç skorunu alır.
+            eventLink = match.find_element(By.CLASS_NAME, "eventRowLink").get_attribute("href") # Etkinliğin linkini alır.
+            liveData.append({ # Verileri diziye sözlük formatında ekler.
+                "Home Team": homeTeam,
+                "Away Team": awayTeam,
+                "Home Score": homeScore,
+                "Away Score": awayScore,
+                "Event Link": eventLink
+            })
+        return liveData
+
     def getFinishedData(self) -> list:
         """ Bitmiş (FINISHED) maç verilerini dizi olarak döndürür. """
+        self.clickFilterTab("FINISHED") # Maç filtrelerinden "FINISHED" sekmesini seçer.
         matches = self.getMatches() # Maç sonuçlarını alır.
         finishedData = [] # Bitmiş maç verilerini tutar.
         for match in matches: # Maçları sırayla döngüde ele alıyoruz.
@@ -111,7 +138,7 @@ class FlashScoreScraper:
             awayTeam = match.find_element(By.CLASS_NAME, "event__awayParticipant").text # Karşı takımın adını alır.
             homeScore = match.find_element(By.CLASS_NAME, "event__score--home").text # Ana takımın maç skorunu alır.
             awayScore = match.find_element(By.CLASS_NAME, "event__score--away").text # Karşı takımın maç skorunu alır.
-            eventLink = match.find_element(By.CLASS_NAME, "eventRowLink").text # Etkinliğin linkini alır.
+            eventLink = match.find_element(By.CLASS_NAME, "eventRowLink").get_attribute("href") # Etkinliğin linkini alır.
             finishedData.append({ # Verileri diziye sözlük formatında ekler.
                 "Home Team": homeTeam,
                 "Away Team": awayTeam,
@@ -123,6 +150,7 @@ class FlashScoreScraper:
 
     def getOddsData(self) -> list:
         """ Oranlardaki (ODDS) maç verilerini dizi olarak döndürür. """
+        self.clickFilterTab(targetTab="ODDS") # Maç filtrelerinden "ODDS" sekmesini seçer.
         matches = self.getMatches() # Maç sonuçlarını alır.
         oddsData = [] # Oran verilerini tutar.
         for match in matches: # Maçları sırayla döngüde ele alıyoruz.
