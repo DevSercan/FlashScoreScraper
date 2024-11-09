@@ -51,6 +51,9 @@
      <bold>true</bold>
     </font>
    </property>
+   <property name="cursor">
+    <cursorShape>PointingHandCursor</cursorShape>
+   </property>
    <property name="text">
     <string>H2H Verilerini Göster</string>
    </property>
@@ -69,6 +72,9 @@
      <pointsize>12</pointsize>
      <bold>true</bold>
     </font>
+   </property>
+   <property name="cursor">
+    <cursorShape>PointingHandCursor</cursorShape>
    </property>
    <property name="text">
     <string>ODDS Verilerini Göster</string>

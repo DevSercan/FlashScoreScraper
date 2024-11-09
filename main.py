@@ -54,7 +54,7 @@ class EventDetailsWindow(QWidget, Ui_Form):
             log.debug("The 'showH2hData' function of the 'EventDetailsWindow' class has been executed.")
             self.eventDetailsModel.clear() # Modeli sıfırlar.
             
-            self.eventDetailsModel.setHorizontalHeaderLabels(["Tarih", "Etkinlik", "Ana Takım", "Karşı Takım", "Ana Takım Skoru", "Karşı Takım Skoru"])
+            self.eventDetailsModel.setHorizontalHeaderLabels(["Başlık", "Tarih", "Etkinlik", "Ana Takım", "Karşı Takım", "Ana Takım Skoru", "Karşı Takım Skoru"])
             self.tblvwEventDetails.setModel(self.eventDetailsModel) # Modeli tabloya bağlıyoruz.
 
             self.eventDetailsModel.removeRows(0, self.eventDetailsModel.rowCount()) # Tablodaki mevcut verileri temizler.
@@ -196,7 +196,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.h2hData = scraper.getH2HDataFromEvent(eventLink)
             scraper.close()
 
-            self.setMessage("Seçilen etkinlik detayları getirildi.")
+            self.setMessage("Etkinlik detayları getirildi. Etkinlik detayları görüntüleniyor...")
         except Exception as e:
             self.setMessage("Seçilen etkinlik detayları getirilemedi!")
             log.error(f"Unexpected error in 'showEventDetails' function of the 'MainWindow' class:\n{e}")
@@ -207,6 +207,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def onShowEventDetailsFinished(self):
         self.eventDetailsWindow = EventDetailsWindow(oddsData=self.oddsData, h2hData=self.h2hData)
         self.eventDetailsWindow.show() # Mod olmayan (non-modal) olarak pencereyi açar, ana pencere açık kalır.
+        self.setMessage("Etkinlik detayları görüntülendi.")
 
     def getLiveMatches(self):
         try:
@@ -221,6 +222,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             scraper.open() # Tarayıcıyı başlatır.
             liveData = scraper.getLiveData() # Canlı maç verilerini alır.
             scraper.close() # Tarayıcıyı sonlandırır.
+            self.setMessage("Canlı maç verileri alındı. Maç verileri görüntüleniyor...")
 
             for rowData in liveData:
                 rowItems = [QStandardItem(str(item)) for item in rowData.values()]
@@ -228,9 +230,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.liveMatchesModel.appendRow(rowItems)
             
             self.tblvwLiveMatches.resizeColumnsToContents() # Tablodaki sütun genişliklerini içeriğe göre düzenler.
-            self.setMessage("Canlı maç verileri alındı.")
+            self.setMessage("Canlı maç verileri görüntülendi.")
         except Exception as e:
-            self.setMessage("Canlı maç verileri alınamadı!")
+            self.setMessage("Canlı maç verilerini görüntülerken beklenmedik bir hata oluştu!")
             log.error(f"Unexpected error in 'getLiveMatches' function of the 'MainWindow' class:\n{e}")
         finally:
             self.togglePushButton(self.pbtnGetLiveMatches, True)

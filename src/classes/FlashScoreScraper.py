@@ -53,6 +53,8 @@ class FlashScoreScraper:
             options.add_argument("--disable-gpu") # GPU hızlandırmasını devre dışı bırak. Headless modda bazen gerekli olabilir.
             options.add_argument("--no-sandbox") # Sandbox modunu devre dışı bırak. Bazı sistemlerde başlatma sorunlarını önleyebilir.
 
+            options.add_argument("--mute-audio") # Tarayıcı sesini kapatır.
+
             options.add_argument('--ignore-certificate-errors') # SSL sertifika hatalarını göz ardı eder
             options.add_argument('--allow-insecure-localhost') # Yerel sunucu hatalarını yok say.
 
@@ -96,6 +98,26 @@ class FlashScoreScraper:
             return True
         except Exception as e:
             log.error(f"Unexpected error in 'scrollTarget' function of the 'FlashScoreScraper' class:\n{e}")
+            return False
+    
+    def scrollBottom(self) -> bool:
+        """ Mevcut tarayıcı sayfasını en aşağı kaydırır. """
+        try:
+            log.debug("The 'scrollBottom' function of the 'FlashScoreScraper' class has been executed.")
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            return True
+        except Exception as e:
+            log.error(f"Unexpected error in 'scrollBottom' function of the 'FlashScoreScraper' class:\n{e}")
+            return False
+    
+    def scrollTop(self) -> bool:
+        """ Mevcut tarayıcı sayfasını en yukarı kaydırır. """
+        try:
+            log.debug("The 'scrollTop' function of the 'FlashScoreScraper' class has been executed.")
+            self.driver.execute_script("window.scrollTo(0, 0);")
+            return True
+        except Exception as e:
+            log.error(f"Unexpected error in 'scrollTop' function of the 'FlashScoreScraper' class:\n{e}")
             return False
 
     def open(self) -> bool:
@@ -291,6 +313,23 @@ class FlashScoreScraper:
         except Exception as e:
             log.error(f"Unexpected error in 'getOddsDataFromEvent' function of the 'FlashScoreScraper' class:\n{e}")
             return []
+    
+    def showMoreH2H(self) -> bool:
+        """ H2H Sayfasında daha fazla maç gösteren seçeneğe tıklar. """
+        try:
+            log.debug("The 'showMoreH2H' function of the 'FlashScoreScraper' class has been executed.")
+            while True:
+                try:
+                    showMoreButton = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "showMore")))
+                    self.scrollTarget(showMoreButton)
+                    showMoreButton.click()
+                    time.sleep(0.4)
+                except:
+                    break
+            return True
+        except Exception as e:
+            log.error(f"Unexpected error in 'showMoreH2H' function of the 'FlashScoreScraper' class:\n{e}")
+            return False
 
     def getH2HDataFromEvent(self, eventLink:str) -> list:
         """ Bir etkinlikteki H2H verilerini alır. """
@@ -300,26 +339,31 @@ class FlashScoreScraper:
             self.waitJs('detailOver') # JavaScript yüklenmesini bekler.
             self.clickEventFilterTab(targetTab="H2H") # Maç filtrelerinden "H2H" sekmesini seçer.
             self.waitJs('h2h') # JavaScript yüklenmesini bekler.
+            self.showMoreH2H()
             h2hTable = self.driver.find_element(By.CLASS_NAME, 'h2h') # H2H Verilerinin yer aldığı tabloyu seçer.
-            h2hList = h2hTable.find_elements(By.CLASS_NAME, 'h2h__row') # Seçilen tablodan H2H verilerini alır.
+            h2hSections = h2hTable.find_elements(By.CLASS_NAME, "h2h__section") # Seçilen tablodan grupları seçer.
             h2hData = [] # Oran verilerini tutar.
-            for h2h in h2hList: # Maçları sırayla döngüde ele alıyoruz.
-                date = h2h.find_element(By.CLASS_NAME, "h2h__date").text
-                event = h2h.find_element(By.CLASS_NAME, "h2h__event").text
-                homeTeam = h2h.find_element(By.CLASS_NAME, "h2h__homeParticipant").text
-                awayTeam = h2h.find_element(By.CLASS_NAME, "h2h__awayParticipant").text
-                result = h2h.find_element(By.CLASS_NAME, "h2h__result")
-                scoreList = result.find_elements(By.TAG_NAME, "span")
-                homeScore = scoreList[0].text
-                awayScore = scoreList[1].text
-                h2hData.append({ # Verileri diziye sözlük formatında ekler.
-                    "Date": date,
-                    "Event": event,
-                    "Home Team": homeTeam,
-                    "Away Team": awayTeam,
-                    "Home Score": homeScore,
-                    "Away Score": awayScore
-                })
+            for section in h2hSections: # Seçilen grupları sırayla döngüde ele alıyoruz.
+                h2hList = section.find_elements(By.CLASS_NAME, 'h2h__row') # Seçilen gruplardan H2H verilerini alır.
+                for h2h in h2hList: # Maçları sırayla döngüde ele alıyoruz.
+                    title = section.find_element(By.CLASS_NAME, "section__title").text
+                    date = h2h.find_element(By.CLASS_NAME, "h2h__date").text
+                    event = h2h.find_element(By.CLASS_NAME, "h2h__event").text
+                    homeTeam = h2h.find_element(By.CLASS_NAME, "h2h__homeParticipant").text
+                    awayTeam = h2h.find_element(By.CLASS_NAME, "h2h__awayParticipant").text
+                    result = h2h.find_element(By.CLASS_NAME, "h2h__result")
+                    scoreList = result.find_elements(By.TAG_NAME, "span")
+                    homeScore = scoreList[0].text
+                    awayScore = scoreList[1].text
+                    h2hData.append({ # Verileri diziye sözlük formatında ekler.
+                        "Title": title,
+                        "Date": date,
+                        "Event": event,
+                        "Home Team": homeTeam,
+                        "Away Team": awayTeam,
+                        "Home Score": homeScore,
+                        "Away Score": awayScore
+                    })
             return h2hData
         except Exception as e:
             log.error(f"Unexpected error in 'getH2HDataFromEvent' function of the 'FlashScoreScraper' class:\n{e}")
