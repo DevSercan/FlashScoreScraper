@@ -276,7 +276,7 @@ class FlashScoreScraper:
                 odds = match.find_elements(By.CLASS_NAME, "odds__odd") # Maç sonucunun oran verilerini alır.
                 oddList = [] # Oranları tutar.
                 for odd in odds: # Oranları sırayla döngüde ele alıyoruz.
-                    oddList.append(str(float(Fraction(odd.text)))) # Oran verisini diziye ekler.
+                    oddList.append(str(float(Fraction(odd.text))+1)) # Oran verisini diziye ekler.
                 oddsData.append({ # Verileri diziye sözlük formatında ekler.
                     "Home Team": homeTeam,
                     "Away Team": awayTeam,
@@ -303,7 +303,7 @@ class FlashScoreScraper:
                 odds = odd.find_elements(By.CLASS_NAME, "oddsCell__odd") # Maç sonucunun oran verilerini alır.
                 oddList = [] # Oranları tutar.
                 for odd in odds: # Oranları sırayla döngüde ele alıyoruz.
-                    oddList.append(str(float(Fraction(odd.text)))) # Oran verisini diziye ekler.
+                    oddList.append(str(float(Fraction(odd.text))+1)) # Oran verisini diziye ekler.
                 oddsData.append({ # Verileri diziye sözlük formatında ekler.
                     "Bookmaker": bookmaker,
                     "Odds": ', '.join(oddList)
